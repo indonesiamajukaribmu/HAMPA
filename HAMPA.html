@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMPA — Perjalanan Menuju Nol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#000000;
+    --ink:#0a0a0f;
+    --ash:#16161d;
+    --mist:#2a2a35;
+    --bone:#e8e2d4;
+    --gold:#c9a961;
+    --rust:#8b3a1f;
+    --frost:#a8b8c8;
+    --glow:#d4b876;
+    --zero:#666;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--bone);
+    font-family:'Space Grotesk',sans-serif;
+    overflow-x:hidden;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{font-family:'Cormorant Garamond',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ===== NOISE OVERLAY ===== */
+  body::before{
+    content:'';
+    position:fixed;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0 0.7 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.4;
+    pointer-events:none;
+    z-index:9999;
+    mix-blend-mode:overlay;
+  }
+
+  /* ===== SCROLL PROGRESS ===== */
+  .progress{
+    position:fixed;top:0;left:0;height:2px;
+    background:linear-gradient(90deg,var(--gold),transparent);
+    z-index:10000;width:0%;
+    transition:width .1s linear;
+  }
+
+  /* ===== NAV ===== */
+  nav{
+    position:fixed;top:0;left:0;right:0;
+    padding:1.5rem 3rem;
+    display:flex;justify-content:space-between;align-items:center;
+    z-index:1000;
+    mix-blend-mode:difference;
+    color:#fff;
+  }
+  nav .brand{
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.4rem;letter-spacing:.4em;
+    font-weight:300;
+  }
+  nav .chapters{display:flex;gap:2rem;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;}
+  nav .chapters span{opacity:.5;cursor:pointer;transition:opacity .3s;}
+  nav .chapters span:hover{opacity:1;}
+
+  /* ===== SECTION BASE ===== */
+  section{
+    min-height:100vh;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    padding:8rem 2rem;
+    overflow:hidden;
+  }
+  .wrap{max-width:1100px;width:100%;position:relative;z-index:2;}
+
+  /* ===== HERO ===== */
+  #hero{
+    background:radial-gradient(ellipse at center,#1a1a22 0%,#000 70%);
+    flex-direction:column;
+    text-align:center;
+  }
+  #hero .pre{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.7rem;letter-spacing:.5em;
+    color:var(--gold);
+    margin-bottom:2rem;
+    opacity:0;animation:fadeUp 1.5s .3s forwards;
+  }
+  #hero h1{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(5rem,18vw,16rem);
+    font-weight:300;
+    letter-spacing:.15em;
+    line-height:.9;
+    background:linear-gradient(180deg,var(--bone) 0%,var(--mist) 60%,#000 100%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+    opacity:0;animation:fadeUp 2s .6s forwards;
+  }
+  #hero .sub{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:clamp(1rem,2.2vw,1.6rem);
+    color:var(--frost);
+    margin-top:2rem;
+    max-width:600px;
+    opacity:0;animation:fadeUp 1.5s 1.2s forwards;
+  }
+  #hero .scroll-hint{
+    position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;
+    letter-spacing:.4em;color:var(--gold);
+    opacity:0;animation:fadeUp 1.5s 2s forwards,bob 2s 2s infinite;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(8px);}}
+
+  /* Floating dust particles */
+  .dust{position:absolute;width:2px;height:2px;background:var(--gold);border-radius:50%;pointer-events:none;}
+
+  /* ===== CHAPTER MARKER ===== */
+  .chapter-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.7rem;letter-spacing:.5em;
+    color:var(--gold);text-transform:uppercase;
+    margin-bottom:1.5rem;
+    display:flex;align-items:center;gap:1rem;
+  }
+  .chapter-label::after{
+    content:'';flex:1;height:1px;
+    background:linear-gradient(90deg,var(--gold),transparent);
+    max-width:200px;
+  }
+  .chapter-num{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(3rem,8vw,6rem);
+    font-weight:300;font-style:italic;
+    color:var(--mist);
+    line-height:1;
+  }
+  h2.title{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(2.2rem,5vw,4rem);
+    font-weight:400;
+    line-height:1.1;
+    margin:1rem 0 2rem;
+    color:var(--bone);
+  }
+  h2.title em{color:var(--gold);font-style:italic;}
+  p.body{
+    font-size:1.05rem;
+    color:var(--frost);
+    max-width:620px;
+    margin-bottom:1.5rem;
+  }
+  p.body strong{color:var(--bone);font-weight:500;}
+
+  /* ===== BAB I — ABAD PERSAHAAN ===== */
+  #bab1{
+    background:linear-gradient(180deg,#000 0%,#1c1208 40%,#2a1810 70%,#000 100%);
+  }
+  .grid-abundance{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:1.5rem;margin-top:3rem;
+  }
+  .abundance-card{
+    aspect-ratio:1;
+    background:linear-gradient(135deg,rgba(201,169,97,.08),rgba(139,58,31,.05));
+    border:1px solid rgba(201,169,97,.15);
+    border-radius:4px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:1.5rem;text-align:center;
+    transition:all .8s cubic-bezier(.2,.8,.2,1);
+    position:relative;overflow:hidden;
+  }
+  .abundance-card::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at center,rgba(201,169,97,.2),transparent 70%);
+    opacity:0;transition:opacity .8s;
+  }
+  .abundance-card:hover::before{opacity:1;}
+  .abundance-card .ico{
+    font-size:2.4rem;margin-bottom:.8rem;
+    filter:grayscale(.3);
+    transition:all .8s;
+  }
+  .abundance-card:hover .ico{filter:grayscale(0) drop-shadow(0 0 12px rgba(201,169,97,.4));transform:scale(1.1);}
+  .abundance-card .name{
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.1rem;color:var(--bone);
+  }
+  .abundance-card .qty{
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;
+    color:var(--gold);letter-spacing:.2em;margin-top:.4rem;
+  }
+  .stat-row{
+    display:flex;gap:3rem;flex-wrap:wrap;margin-top:4rem;
+    padding-top:3rem;border-top:1px solid rgba(201,169,97,.15);
+  }
+  .stat{flex:1;min-width:180px;}
+  .stat .num{
+    font-family:'Cormorant Garamond',serif;
+    font-size:3rem;font-weight:300;color:var(--gold);
+    line-height:1;
+  }
+  .stat .lbl{
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;
+    letter-spacing:.3em;color:var(--frost);text-transform:uppercase;
+    margin-top:.6rem;
+  }
+
+  /* ===== BAB II — PENGANGKATAN ===== */
+  #bab2{
+    background:linear-gradient(180deg,#000 0%,#0d0a14 50%,#000 100%);
+  }
+  .lift-stage{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:1rem;margin:3rem 0;
+  }
+  .lift-cell{
+    aspect-ratio:.8;
+    border:1px solid rgba(168,184,200,.1);
+    background:rgba(255,255,255,.02);
+    border-radius:4px;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    padding:1.2rem;position:relative;
+    transition:all 1.2s cubic-bezier(.4,0,.2,1);
+  }
+  .lift-cell .object{
+    font-size:2.2rem;
+    transition:all 1.5s cubic-bezier(.4,0,.2,1);
+    margin-bottom:1rem;
+  }
+  .lift-cell .label{
+    font-family:'JetBrains Mono',monospace;font-size:.55rem;
+    letter-spacing:.2em;color:var(--frost);text-transform:uppercase;
+  }
+  .lift-cell.stage-0 .object{transform:translateY(0);opacity:1;}
+  .lift-cell.stage-1 .object{transform:translateY(-30px);opacity:.6;}
+  .lift-cell.stage-2 .object{transform:translateY(-70px) scale(.8);opacity:.25;}
+  .lift-cell.stage-3 .object{transform:translateY(-120px) scale(.4);opacity:0;}
+
+  .lift-cell::after{
+    content:'';position:absolute;bottom:1.2rem;left:50%;
+    width:30px;height:1px;
+    background:rgba(201,169,97,.3);
+    transform:translateX(-50%);
+  }
+  .timeline-bar{
+    height:1px;background:linear-gradient(90deg,var(--rust),var(--gold),transparent);
+    margin:3rem 0;position:relative;
+  }
+  .timeline-bar::before,.timeline-bar::after{
+    content:'';position:absolute;width:8px;height:8px;
+    background:var(--gold);border-radius:50%;
+    top:-3.5px;
+  }
+  .timeline-bar::before{left:0;}
+  .timeline-bar::after{left:33%;background:var(--rust);}
+
+  /* ===== BAB III — PUNCAK ===== */
+  #bab3{
+    background:linear-gradient(180deg,#000 0%,#0a0a0f 50%,#000 100%);
+  }
+  .city-grid{
+    display:grid;grid-template-columns:repeat(6,1fr);
+    gap:2px;margin:3rem 0;
+    height:240px;
+  }
+  .city-cell{
+    background:linear-gradient(180deg,transparent,var(--mist));
+    border-top:1px solid rgba(201,169,97,.2);
+    position:relative;
+    transition:all .8s;
+  }
+  .city-cell:nth-child(odd){height:60%;}
+  .city-cell:nth-child(3n){height:80%;}
+  .city-cell:nth-child(4n){height:45%;}
+  .city-cell:nth-child(5n){height:90%;}
+  .city-cell::after{
+    content:'';position:absolute;top:-4px;left:50%;
+    width:2px;height:4px;background:var(--gold);
+    transform:translateX(-50%);
+    box-shadow:0 0 6px var(--gold);
+    animation:blink 3s infinite;
+  }
+  @keyframes blink{0%,90%,100%{opacity:1;}95%{opacity:.3;}}
+  .peak-quote{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:clamp(1.4rem,3vw,2.2rem);
+    color:var(--bone);
+    border-left:2px solid var(--gold);
+    padding-left:2rem;
+    margin:3rem 0;
+    max-width:700px;
+  }
+  .peak-quote cite{
+    display:block;font-style:normal;
+    font-family:'JetBrains Mono',monospace;font-size:.7rem;
+    letter-spacing:.3em;color:var(--gold);
+    margin-top:1rem;
+  }
+
+  /* ===== BAB IV — HAMPA ===== */
+  #bab4{
+    background:radial-gradient(ellipse at center,#0a0a0f 0%,#000 80%);
+    flex-direction:column;
+  }
+  .void-visual{
+    width:100%;max-width:600px;
+    aspect-ratio:1;
+    margin:2rem auto;
+    position:relative;
+  }
+  .void-ring{
+    position:absolute;inset:0;
+    border:1px solid rgba(201,169,97,.15);
+    border-radius:50%;
+    animation:rotate 30s linear infinite;
+  }
+  .void-ring:nth-child(2){inset:8%;animation-duration:45s;animation-direction:reverse;border-color:rgba(168,184,200,.1);}
+  .void-ring:nth-child(3){inset:18%;animation-duration:60s;border-color:rgba(139,58,31,.15);}
+  .void-ring:nth-child(4){inset:30%;animation-duration:25s;animation-direction:reverse;border-style:dashed;}
+  .void-ring:nth-child(5){inset:42%;animation-duration:15s;}
+  @keyframes rotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  .void-core{
+    position:absolute;top:50%;left:50%;
+    width:40px;height:40px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle,#000 40%,rgba(201,169,97,.3) 70%,transparent 100%);
+    box-shadow:0 0 60px rgba(201,169,97,.2),inset 0 0 30px #000;
+  }
+  .void-text{
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    font-family:'Cormorant Garamond',serif;
+    font-size:.9rem;letter-spacing:.4em;
+    color:var(--gold);
+    text-transform:uppercase;
+    z-index:5;
+  }
+  .stages-void{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:1rem;margin-top:3rem;
+  }
+  .void-stage{
+    border:1px solid rgba(168,184,200,.08);
+    padding:1.5rem;
+    background:rgba(255,255,255,.01);
+    transition:all .5s;
+  }
+  .void-stage:hover{border-color:rgba(201,169,97,.3);background:rgba(201,169,97,.03);}
+  .void-stage .n{
+    font-family:'JetBrains Mono',monospace;font-size:.65rem;
+    color:var(--gold);letter-spacing:.3em;
+  }
+  .void-stage .t{
+    font-family:'Cormorant Garamond',serif;font-size:1.3rem;
+    color:var(--bone);margin:.6rem 0;
+  }
+  .void-stage .d{
+    font-size:.85rem;color:var(--frost);line-height:1.6;
+  }
+
+  /* ===== BAB V — NOL ===== */
+  #bab5{
+    background:#000;
+    flex-direction:column;text-align:center;
+  }
+  .zero-display{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(12rem,30vw,24rem);
+    font-weight:300;
+    line-height:.8;
+    background:radial-gradient(circle at center,var(--gold) 0%,var(--mist) 40%,#000 70%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+    margin:0;
+    animation:pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.02);}}
+  .zero-meaning{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:1.4rem;color:var(--frost);
+    max-width:600px;margin:2rem auto;
+  }
+  .zero-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:2rem;max-width:800px;margin:3rem auto;
+  }
+  .zero-card{
+    text-align:left;
+    border-top:1px solid rgba(201,169,97,.2);
+    padding-top:1.5rem;
+  }
+  .zero-card .sym{
+    font-family:'Cormorant Garamond',serif;
+    font-size:2rem;color:var(--gold);font-style:italic;
+  }
+  .zero-card .ttl{
+    font-family:'JetBrains Mono',monospace;font-size:.7rem;
+    letter-spacing:.3em;color:var(--bone);text-transform:uppercase;
+    margin:.5rem 0;
+  }
+  .zero-card .desc{
+    font-size:.85rem;color:var(--frost);
+  }
+
+  /* ===== EPILOG ===== */
+  #epilog{
+    background:linear-gradient(180deg,#000 0%,#0a0805 100%);
+    min-height:60vh;
+    flex-direction:column;text-align:center;
+  }
+  .epilog-text{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(1.2rem,2.5vw,1.8rem);
+    font-style:italic;
+    color:var(--bone);
+    max-width:680px;
+    line-height:1.6;
+  }
+  .signature{
+    margin-top:3rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.65rem;letter-spacing:.4em;
+    color:var(--gold);
+  }
+  .signature::before{
+    content:'';display:block;width:60px;height:1px;
+    background:var(--gold);margin:0 auto 1.5rem;
+  }
+
+  /* ===== REVEAL ANIM ===== */
+  .reveal{opacity:0;transform:translateY(40px);transition:all 1.2s cubic-bezier(.2,.8,.2,1);}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:768px){
+    nav{padding:1rem 1.5rem;}
+    nav .chapters{display:none;}
+    .lift-stage{grid-template-columns:repeat(2,1fr);}
+    .city-grid{grid-template-columns:repeat(4,1fr);height:180px;}
+    .zero-grid{grid-template-columns:1fr;}
+    .stat-row{gap:1.5rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<nav>
+  <div class="brand">HAMPA</div>
+  <div class="chapters">
+    <span data-t="bab1">I · Berlimpah</span>
+    <span data-t="bab2">II · Terangkat</span>
+    <span data-t="bab3">III · Puncak</span>
+    <span data-t="bab4">IV · Hampa</span>
+    <span data-t="bab5">V · Nol</span>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <div class="pre">— SEBUAH ESSAI VISUAL TENTANG KEKOSONGAN —</div>
+  <h1 class="serif">HAMPA</h1>
+  <div class="sub serif">Ketika peradaban modern mencapai puncaknya,<br>segala yang padat perlahan terangkat,<br>dan dunia kembali ke titik nolnya.</div>
+  <div class="scroll-hint">GULIR UNTUK MENURUTI KEKOSONGAN ↓</div>
+</section>
+
+<!-- ===== BAB I — ABAD KELIMPAHAN ===== -->
+<section id="bab1">
+  <div class="wrap">
+    <div class="chapter-label reveal">Bab I</div>
+    <div class="chapter-num serif reveal">Berlimpah</div>
+    <h2 class="title reveal serif">Dunia dipenuhi sampai <em>tumpah</em>.</h2>
+    <p class="body reveal">Di awal abad ke-21, peradaban manusia mencapai tingkat kelimpahan yang tak pernah tercatat sebelumnya. Setiap sudut kota mengeluarkan uap, setiap etalase berkilau, setiap meja menyajikan lebih dari yang bisa dimakan. Makanan dan minuman menjadi bukti bahwa manusia telah menaklukkan kelaparan.</p>
+    <p class="body reveal">Tapi kelimpahan membawa beban yang tak terlihat: <strong>kebiasaan untuk selalu menambah</strong>. Semakin banyak, semakin cepat, semakin dekat dengan titik jenuh.</p>
+
+    <div class="grid-abundance reveal">
+      <div class="abundance-card"><div class="ico">☕</div><div class="name serif">Kopi</div><div class="qty">4 MLIAR CANGKIR/HARI</div></div>
+      <div class="abundance-card"><div class="ico">🍞</div><div class="name serif">Roti</div><div class="qty">9 MLIAR POTONG/HARI</div></div>
+      <div class="abundance-card"><div class="ico">🍷</div><div class="name serif">Anggur</div><div class="qty">234 JUTA HL/TAHUN</div></div>
+      <div class="abundance-card"><div class="ico">🍚</div><div class="name serif">Beras</div><div class="qty">515 JUTA TON/TAHUN</div></div>
+      <div class="abundance-card"><div class="ico">🍫</div><div class="name serif">Cokelat</div><div class="qty">7,5 JUTA TON/TAHUN</div></div>
+      <div class="abundance-card"><div class="ico">🥛</div><div class="name serif">Susu</div><div class="qty">530 JUTA TON/TAHUN</div></div>
+    </div>
+
+    <div class="stat-row reveal">
+      <div class="stat"><div class="num serif">8,1M</div><div class="lbl">Manusia Bernafas</div></div>
+      <div class="stat"><div class="num serif">1/3</div><div class="lbl">Makanan Terbuang</div></div>
+      <div class="stat"><div class="num serif">∞</div><div class="lbl">Permintaan Bertumbuh</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BAB II — PENGANGKATAN ===== -->
+<section id="bab2">
+  <div class="wrap">
+    <div class="chapter-label reveal">Bab II</div>
+    <div class="chapter-num serif reveal">Terangkat</div>
+    <h2 class="title reveal serif">Satu per satu, benda-benda <em>menghilang</em> dari meja.</h2>
+    <p class="body reveal">Bukan kelaparan yang datang. Bukan kekeringan. Melainkan sebuah proses yang lebih tenang dan lebih aneh: benda-benda padat perlahan <strong>terangkat</strong> dari kenyataan, seolah dunia menarik kembali apa yang pernah ia berikan.</p>
+    <p class="body reveal">Secangkir kopi pagi tak lagi hangat. Piring tak lagi penuh. Botol-botol kosong sebelum disentuh. Kita menyebutnya "kebiasaan berubah", padahal sesungguhnya benda itu sedang dicabut dari realitas.</p>
+
+    <div class="lift-stage reveal" id="liftStage">
+      <div class="lift-cell stage-0"><div class="object">☕</div><div class="label">Kopi</div></div>
+      <div class="lift-cell stage-1"><div class="object">🍷</div><div class="label">Anggur</div></div>
+      <div class="lift-cell stage-2"><div class="object">🍞</div><div class="label">Roti</div></div>
+      <div class="lift-cell stage-3"><div class="object">🍫</div><div class="label">Cokelat</div></div>
+    </div>
+
+    <div class="timeline-bar reveal"></div>
+
+    <p class="body reveal serif" style="font-style:italic;color:var(--bone);font-size:1.15rem;">
+      Tiga tahap pengangkatan: terasa ringan, terasa jauh, lalu tak terlihat lagi. Yang ketiga adalah ketika kita lupa bahwa ia pernah ada.
+    </p>
+  </div>
+</section>
+
+<!-- ===== BAB III — PUNCAK PERADABAN ===== -->
+<section id="bab3">
+  <div class="wrap">
+    <div class="chapter-label reveal">Bab III</div>
+    <div class="chapter-num serif reveal">Puncak</div>
+    <h2 class="title reveal serif">Saat tak ada lagi yang bisa <em>ditinggikan</em>.</h2>
+    <p class="body reveal">Dunia menjadi pusat peradaban paling maju yang pernah ada. Menara-menara kaca menembus awan, jaringan data membungkus planet, manusia menyentuh batas kecepatan cahaya. Semua sudah dibangun. Semua sudah dioptimalkan.</p>
+
+    <div class="city-grid reveal">
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+      <div class="city-cell"></div><div class="city-cell"></div><div class="city-cell"></div>
+    </div>
+
+    <blockquote class="peak-quote reveal serif">
+      "Peradaban mencapai puncaknya bukan ketika semua hal telah dibangun, melainkan ketika tidak ada lagi ruang untuk dibangun. Di titik itu, satu-satunya gerakan yang tersisa adalah <em>menjarikan</em>."
+      <cite>— Catatan dari Abad Hampa</cite>
+    </blockquote>
+
+    <p class="body reveal">Di puncak itulah proses hampa dimulai. Bukan dari kehancuran, melainkan dari <strong>kelebihan penuh</strong>. Ketika dunia tak bisa lagi menampung, ia mulai melepaskan — secara sunyi, tanpa ledakan, tanpa peringatan.</p>
+  </div>
+</section>
+
+<!-- ===== BAB IV — HAMPA ===== -->
+<section id="bab4">
+  <div class="wrap">
+    <div class="chapter-label reveal" style="text-align:center;justify-content:center;">Bab IV</div>
+    <div class="chapter-num serif reveal" style="text-align:center;">Hampa</div>
+    <h2 class="title reveal serif" style="text-align:center;">Di tengah segala kemajuan, muncul <em>ruang kosong</em>.</h2>
+
+    <div class="void-visual reveal">
+      <div class="void-ring"></div>
+      <div class="void-ring"></div>
+      <div class="void-ring"></div>
+      <div class="void-ring"></div>
+      <div class="void-ring"></div>
+      <div class="void-core"></div>
+      <div class="void-text">HAMPA</div>
+    </div>
+
+    <p class="body reveal" style="margin:2rem auto;text-align:center;">Hampa bukan lawan dari penuh. Hampa adalah <strong>jejak</strong> yang ditinggalkan oleh benda-benda yang telah pergi. Ia adalah bentuk terakhir dari segala yang pernah kita pegang.</p>
+
+    <div class="stages-void reveal">
+      <div class="void-stage">
+        <div class="n mono">01 / HAMPA FISIK</div>
+        <div class="t serif">Benda Hilang</div>
+        <div class="d">Lemari piring kosong. Kulkas senyap. Etalase tidak lagi berkilau. Yang padat menjadi lapang.</div>
+      </div>
+      <div class="void-stage">
+        <div class="n mono">02 / HAMPA RASA</div>
+        <div class="t serif">Selera Menghilang</div>
+        <div class="d">Bukan hanya makanan yang pergi — rasa lapar juga ikut pergi. Tubuh lupa bahwa ia pernah butuh.</div>
+      </div>
+      <div class="void-stage">
+        <div class="n mono">03 / HAMPA MAKNA</div>
+        <div class="t serif">Bahasa Menyusut</div>
+        <div class="d">Kata-kata untuk makan, minum, haus, kenyang — perlahan tak digunakan. Lalu tak diingat.</div>
+      </div>
+      <div class="void-stage">
+        <div class="n mono">04 / HAMPA MEMORI</div>
+        <div class="t serif">Ingatan Kabur</div>
+        <div class="d">Anak-cucu tak tahu bahwa roti pernah harum, kopi pernah pahit, anggur pernah membuat malam lebih dalam.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BAB V — KEMBALI KE NOL ===== -->
+<section id="bab5">
+  <div class="wrap">
+    <div class="chapter-label reveal" style="justify-content:center;">Bab V</div>
+    <div class="chapter-num serif reveal" style="text-align:center;">Nol</div>
+
+    <div class="zero-display serif reveal">0</div>
+
+    <p class="zero-meaning serif reveal">Dunia kembali ke titik nolnya.<br>Bukan hancur — melainkan <em>dikosongkan</em>.</p>
+
+    <div class="zero-grid reveal">
+      <div class="zero-card">
+        <div class="sym serif">∅</div>
+        <div class="ttl mono">Nol Fisik</div>
+        <div class="desc">Tidak ada lagi benda yang menempati ruang. Setiap meja adalah meja kosong. Setiap gelas adalah gelas kosong.</div>
+      </div>
+      <div class="zero-card">
+        <div class="sym serif">○</div>
+        <div class="ttl mono">Nol Konsep</div>
+        <div class="desc">Idea tentang "makan" dan "minum" tak lagi terdefinisi. Bahasa kembali ke keadaan sebelum kata.</div>
+      </div>
+      <div class="zero-card">
+        <div class="sym serif">·</div>
+        <div class="ttl mono">Nol Mula</div>
+        <div class="desc">Titik di mana segala sesuatu dapat dimulai lagi — atau tidak sama sekali. Nol adalah pintu yang terbuka dua arah.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EPILOG ===== -->
+<section id="epilog">
+  <p class="epilog-text reveal serif">
+    "Hampa bukan akhir dari dunia.<br>
+    Hampa adalah dunia yang telah <em>selesai menyebut dirinya</em>.<br>
+    Setelah semua terangkat, hanya ruang yang tersisa —<br>
+    dan ruang itu menunggu untuk ditulis ulang."
+  </p>
+  <div class="signature reveal mono">— TUTUP ESAI —</div>
+</section>
+
+<script>
+  // === SCROLL PROGRESS ===
+  const prog = document.getElementById('progress');
+  window.addEventListener('scroll',()=>{
+    const h = document.documentElement;
+    const s = h.scrollTop / (h.scrollHeight - h.clientHeight);
+    prog.style.width = (s*100)+'%';
+  });
+
+  // === REVEAL ON SCROLL ===
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+      }
+    });
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // === NAV CLICK ===
+  document.querySelectorAll('nav .chapters span').forEach(s=>{
+    s.addEventListener('click',()=>{
+      const id = s.dataset.t;
+      document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  // === LIFT STAGE ANIMATION ===
+  const liftCells = document.querySelectorAll('#liftStage .lift-cell');
+  const liftIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        let i=0;
+        const cycle = setInterval(()=>{
+          liftCells.forEach((c,idx)=>{
+            const st = (idx+i)%4;
+            c.className = 'lift-cell stage-'+st;
+          });
+          i++;
+          if(i>8) clearInterval(cycle);
+        },900);
+      }
+    });
+  },{threshold:.4});
+  if(document.getElementById('liftStage')) liftIO.observe(document.getElementById('liftStage'));
+
+  // === DUST PARTICLES ===
+  const hero = document.getElementById('hero');
+  for(let i=0;i<40;i++){
+    const d = document.createElement('div');
+    d.className='dust';
+    d.style.left = Math.random()*100+'%';
+    d.style.top = Math.random()*100+'%';
+    d.style.opacity = Math.random()*.6;
+    d.style.transform = `scale(${Math.random()*1.5+.5})`;
+    d.style.animation = `floatDust ${5+Math.random()*10}s linear infinite`;
+    d.style.animationDelay = -Math.random()*10+'s';
+    hero.appendChild(d);
+  }
+  const style = document.createElement('style');
+  style.textContent = `@keyframes floatDust{0%{transform:translateY(0) translateX(0);}50%{transform:translateY(-30px) translateX(15px);}100%{transform:translateY(0) translateX(0);}}`;
+  document.head.appendChild(style);
+</script>
+</body>
+</html>
